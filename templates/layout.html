@@ -1,0 +1,336 @@
+<!doctype html>
+<html>
+    <head>
+      <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+      <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
+        <script src="https://kit.fontawesome.com/762d8c08f6.js" crossorigin="anonymous"></script> 
+        <script>
+          var init_word = "#深夜の2時間DTM";
+            
+            var json;
+            var now_playing;
+            var json_count;
+            var search_word = "";
+            var datetimeObject;
+            let video_player;
+            let info_user_name;
+            let info_user_id;
+            let info_datetime;
+            let info_full_text;
+            let info_twitter_icon;
+            let tweet_url;
+            let search_status;
+            //DOMの読み込み完了時の処理
+            window.addEventListener('DOMContentLoaded', function() {
+              //必要なHTML要素を取得
+              video_player = document.getElementById("videoplayer");
+              info_user_id = document.getElementById("user_id");
+              info_user_name = document.getElementById("user_name");
+              info_datetime = document.getElementById("datetime");
+              info_full_text = document.getElementById("full_text");
+              info_twitter_icon = document.getElementById("twitter_icon");
+              tweet_url = document.getElementById("tweet_url");
+              search_status = document.getElementById("search_status");
+
+
+              
+
+              //再生終了時に次を再生する処理 もし最後までいったら新しく検索
+              video_player.onended = (event) => {
+                if (now_playing + 1 < json_count) {
+                  now_playing++;
+                } else {
+                  now_playing = 0;
+                }
+                play_video(json.statuses[now_playing]);
+              };
+
+              document.getElementById("post_param").value = init_word;
+              //$('#post_param').value = init_word;
+              $('#post_param').focus().get(0).setSelectionRange(init_word.length, init_word.length);
+              
+            });
+
+            function play_next() {
+              if (video_player.src != "") {
+                if (now_playing + 1 < json_count) {
+                  now_playing++;
+                } else {
+                  now_playing = 0;
+                }
+                play_video(json.statuses[now_playing]);
+              }
+            }
+
+            function play_prev() {
+              if (video_player.src != "") {
+                if (now_playing - 1 < 0) {
+                  now_playing = json_count - 1
+                } else {
+                  now_playing--;
+                }
+                play_video(json.statuses[now_playing]);
+              }
+
+            }
+
+            function check() {
+              alert("check");
+              return false;
+            }
+
+            function detect_enter(code) {
+              //エンターキー押下なら
+              if(13 === code)
+              {
+                post_func('http://localhost:5000/post')
+              }
+            }
+
+            
+            function enter(){
+              $('#submit').click();
+              /*
+              if( window.event.keyCode == 13 ){
+                var evt = document.createEvent( "MouseEvents" );
+                evt.initEvent( "click", true, true );
+                document.getElementById("submit").dispatchEvent(evt);
+              }
+          */
+            }
+          
+
+
+            function get_func(url) {
+              fetch(url)
+              .then(function(response) {
+                return response.text();
+              })
+              .then(function(returned_json) {
+                json = JSON.parse(returned_json);
+                console.log(json);  
+                json_count = json.statuses.length;
+
+                now_playing = 0;
+
+                if (json.statuses.length == 0) {
+                  /* 該当動画無し */
+                  alert("該当の動画が見つかりませんでした。");
+                } else {
+                  play_video(json.statuses[0]);
+                }
+
+                /*
+               json.statuses.forEach(status => {                 
+                view.insertAdjacentHTML('beforeend', status.user_id);
+                view.insertAdjacentHTML('beforeend', "<br>");
+               });
+               */
+              });
+            }
+            
+        
+            function post_func(url) {
+              search_status.textContent = "検索中・・・";
+              // Postで送るパラメータを作成
+              let formData = new FormData();
+              //検索ワードが変わった場合，tweetIdをリセット
+              if (document.getElementById('post_param').value != search_word){
+                
+              }
+              search_word = document.getElementById('post_param').value;
+              formData.append('word', search_word);
+            
+              fetch(url, {
+                method: 'POST',  // methodを指定しないとGETになる
+                body: formData,  // Postで送るパラメータを指定
+              })
+              .then(function() {  // Postした後に結果をGetする（コールバックなのでPostが実行完了してから実行される）
+                get_func('http://localhost:5000/get');  // 今回は「http://192.168.1.100:4000/get」
+              });
+              // ここにget_funcを書くとPostとGetがほぼ同時に行われてしまい、Post結果をGetできない
+              // get_func('APIのGet用URL');
+            }
+
+            function play_video(status) {
+              search_status.textContent = String(json_count) + "件見つかりました。";
+              videoplayer.src = status.video_url;
+              info_twitter_icon.src  = status.icon_url;
+              info_user_name.textContent = status.user_name;
+              info_user_id.textContent = "@" +status.user_id;
+              datetimeObject = new Date(status.datetime)
+              var minutes = String(datetimeObject.getMinutes());
+              if (minutes.length == 1) {
+                minutes = '0' + minutes;
+              }
+              info_datetime.textContent  = datetimeObject.getHours() + ":" + minutes + " · " + datetimeObject.getFullYear() + "年" + datetimeObject.getMonth() + "月" + datetimeObject.getDate() + "日";
+              info_full_text.textContent = "";
+              var tweet_text_ary = status.text.split("\n");
+              for (var i = 0; i < tweet_text_ary.length - 1; i++){
+                info_full_text.insertAdjacentHTML('beforeend', tweet_text_ary[i]);
+                info_full_text.insertAdjacentHTML('beforeend', "<br>");
+              };
+              info_full_text.insertAdjacentHTML('beforeend', tweet_text_ary.slice(-1)[0]);
+              
+              //info_full_text.textContent = status.text;
+              tweet_url.textContent = "Twitterで開く";
+              tweet_url.href = status.url;
+              
+
+
+              videoplayer.play();
+
+            }
+            </script>
+      <style>
+        .search_container {
+          text-align: center;
+        }
+
+        .videoplayer_wrapper {
+          text-align: center;
+        }
+
+        .videoplayer_wrapper #videoplayer{
+          width: 640px;
+          height: 480px;
+          max-height: 480px;
+          background-color: black;
+        }
+
+        .videocontrollers_wrapper {
+          height: 72px;
+          width: 400px;
+          margin: 0 auto;
+          text-align: center;
+        }
+        
+        .videocontroller {
+          font-size: 50px;
+          margin-left: 20px;
+          margin-right: 20px;
+        }
+
+
+        .twitter__container {
+          padding: 0;
+          background: #ffffff;
+          overflow: hidden;
+          max-width: 800px;
+          margin: 20px auto;
+          font-size: 80%;
+          border: solid 1px #eeeeee;
+
+        }
+
+        .twitter__container .twitter__block {
+          width: 100%;
+          display: block;
+          padding: 10px;
+          margin-bottom: 5px;
+          border-bottom: solid 1px #eeeeee;
+          overflow: hidden;
+        }
+
+        .twitter__container .twitter__block:last-child {
+          border-bottom: solid 0px;
+        }
+        /* アイコン画像 */
+        .twitter__container .twitter__block figure {
+          width: 50px;
+          padding: 0;
+          margin: 0;
+          float: left;
+          width: 50px;
+        }
+          /* 正方形を用意 */
+        .twitter__container .twitter__block figure img {
+          border-radius: 50%;
+          width: 50px;
+          height: 50px;
+        }
+        /* コメントエリア */
+        .twitter__container .twitter__block-text {
+          margin: 0;
+          position: relative;
+          margin-left: 60px;
+          padding-right: 10px;
+        }
+
+        .twitter__container .twitter__block-text .name {
+          font-weight: bold;
+        }
+
+        .twitter__container .twitter__block-text .name .name_reply {
+          color: #8a9aa4;
+          margin-left: 10px;
+        }
+
+        .twitter__container .twitter__block-text .date {
+          position: absolute;
+          top: 0;
+          right: 20px;
+          text-align: right;
+          color: #8a9aa4;
+        }
+        /* 本文 */
+        .twitter__container .twitter__block-text .text {
+          margin: 5px 0;
+        }
+      </style>
+
+    </head>
+
+    <body>
+      <!--
+        <form action="/player" method="POST">
+            <input type="text" name="search_word" placeholder="検索ワード">
+            <input type="submit" value="検索">
+        </form>
+      -->
+      <div class="wrapper">
+        <div class="search_container">
+          <input type="text" id="post_param" size=20 placeholder="検索ワード" onkeypress="detect_enter(event.keyCode);">
+          <input type="submit" id="submit" value="検索" onClick="post_func('http://localhost:5000/post')">  <!-- 送信先のurl -->
+          <div id="search_status">検索ワードを指定してください</div>
+        </div>
+        
+        <div id="player">
+          <div class="videoplayer_wrapper">
+            <video id="videoplayer" controls></video>
+          </div>
+          <div class="videocontrollers_wrapper">
+            
+              <!-- ここにスキップボタンを実装 -->
+              <a href="javascript:play_prev();" class="videocontroller"><i class="fas fa-step-backward"></i></a>
+              <a href="javascript:play_next();" class="videocontroller"><i class="fas fa-step-forward"></i></a>
+
+            
+          </div>
+          <div class="twitter__container">
+            <div class="twitter__block">
+              <figure>
+                <img id="twitter_icon" width="64" src="/favicon.ico">
+              </figure>
+              <div class="twitter__block-text">
+                <div><span class="name" id="user_name">このアプリについて</span><span class="name_reply" id="user_id">@about_me</span></div>
+                <div class="date" id="datetime">午後11:46 · 2020年12月14日</div>
+                <div class="text" id="full_text">
+                  検索ワードを含むツイートに添付された動画を連続で再生するWebアプリです。<br>
+                  直近1週間のツイートから検索できます(Twitter APIの仕様で、1週間しか遡れません)。
+                </div>
+                <a id="tweet_url" target="_blank" rel="noopener noreferrer"></a>
+              </div>
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+        
+
+    </body>
+    {% block content %}
+    <!-- ここにメインコンテンツを書く -->
+    {% endblock %}
+</html>
