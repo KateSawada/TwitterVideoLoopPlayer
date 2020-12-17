@@ -9,10 +9,11 @@
     - tweepy 3.8.0
 
 ## 使用方法
-1. 環境を整える
-2. main.pyを実行する `$ python main.py`
-3. 表示されたアドレス・ポートにブラウザでアクセスする
-4. 検索したい言葉を入力して検索ボタンを押す(デフォルトで「#深夜の2時間DTM」になっています)
+1. Python環境を整える
+2. Twitter Developersでキー・トークンを発行し，key.pyの指定箇所にコピペ(このあたりは[コチラのサイト](https://www.itti.jp/web-direction/how-to-apply-for-twitter-api/)が参考になるかと思います)
+3. main.pyを実行する `$ python main.py`
+4. 表示されたアドレス・ポートにブラウザでアクセスする
+5. 検索したい言葉を入力して検索ボタンを押す(デフォルトで「#深夜の2時間DTM」になっています)
 
 ## 参考
 - Twitter API(tweepy)
