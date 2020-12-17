@@ -24,6 +24,7 @@
     - https://riptutorial.com/ja/flask/example/5831/flask-api%E3%81%8B%E3%82%89json%E3%83%AC%E3%82%B9%E3%83%9D%E3%83%B3%E3%82%B9%E3%82%92%E8%BF%94%E3%81%99
 - html/css/js
     - https://nakox.jp/web/coding/chat_twitter_css
+    - https://twitter.com/dn_lmds_gl
 
 ## License
 See [LICENSE](https://github.com/KateSawada/TwitterVideoLoopPlayer/blob/master/LICENSE)
