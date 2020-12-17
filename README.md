@@ -26,4 +26,4 @@
     - https://nakox.jp/web/coding/chat_twitter_css
 
 ## License
-See [LICENSE](./LINCENSE)
+See [LICENSE](https://github.com/KateSawada/TwitterVideoLoopPlayer/blob/master/LICENSE)
