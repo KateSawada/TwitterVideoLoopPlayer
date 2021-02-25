@@ -5,6 +5,7 @@
       <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
         <script src="https://kit.fontawesome.com/762d8c08f6.js" crossorigin="anonymous"></script> 
         <script>
+          const serverURL = "http://localhost:5000"; //開発/テスト用
           var init_word = "#深夜の2時間DTM";
             
             var json;
@@ -20,6 +21,36 @@
             let info_twitter_icon;
             let tweet_url;
             let search_status;
+            const readAsTextReader = file => {
+              const reader = new FileReader();
+
+              return new Promise((resolve, reject) => {
+                reader.onloadstart = ev => {
+                  console.log(`onloadstart: total=${ev.loaded}/${ev.loaded}`);
+                };
+
+                reader.onloadend = ev => {
+                  console.log(`onloadend: total=${ev.loaded}/${ev.loaded}`);
+                };
+
+                reader.onprogress = ev => {
+                  console.log(`onprogress: total=${ev.loaded}/${ev.loaded}`);
+                };
+
+                reader.onerror = () => {
+                  reader.abort();
+                  alert("不正な形式のjsonです")
+                  reject('Unknown error occurred during reading the file');
+                };
+
+                reader.onload = () => {
+                  console.log('onload');
+                  resolve(JSON.parse(reader.result))
+                };
+
+                reader.readAsText(file);
+              });
+            };
             //DOMの読み込み完了時の処理
             window.addEventListener('DOMContentLoaded', function() {
               //必要なHTML要素を取得
@@ -31,6 +62,24 @@
               info_twitter_icon = document.getElementById("twitter_icon");
               tweet_url = document.getElementById("tweet_url");
               search_status = document.getElementById("search_status");
+              
+
+              //https://javascript.keicode.com/newjs/how-to-read-file-with-file-api.php
+              document.getElementById("jsonUpload").addEventListener("change", evt => {
+                let inputJson = evt.target.files[0];
+                readAsTextReader(inputJson).then(value => {
+                  json = value;
+                  if (json.statuses.length == 0) {
+                  /* 該当動画無し */
+                    alert("jsonを読み込めませんでした");
+                  } else {
+                    json_count = json.statuses.length;
+                    now_playing = 0;  
+                    play_video(json.statuses[0]);
+                  }
+
+                })
+              })
 
 
               
@@ -83,7 +132,7 @@
               //エンターキー押下なら
               if(13 === code)
               {
-                post_func('http://localhost:5000/post')
+                post_func(serverURL + '/post');
               }
             }
 
@@ -135,8 +184,8 @@
               // Postで送るパラメータを作成
               let formData = new FormData();
               //検索ワードが変わった場合，tweetIdをリセット
-              if (document.getElementById('post_param').value != search_word){
-                
+              if (document.getElementById('post_param').value == search_word){
+                return;
               }
               search_word = document.getElementById('post_param').value;
               formData.append('word', search_word);
@@ -146,7 +195,7 @@
                 body: formData,  // Postで送るパラメータを指定
               })
               .then(function() {  // Postした後に結果をGetする（コールバックなのでPostが実行完了してから実行される）
-                get_func('http://localhost:5000/get');  // 今回は「http://192.168.1.100:4000/get」
+                get_func(serverURL + '/get');  // 今回は「http://192.168.1.100:4000/get」
               });
               // ここにget_funcを書くとPostとGetがほぼ同時に行われてしまい、Post結果をGetできない
               // get_func('APIのGet用URL');
@@ -163,7 +212,7 @@
               if (minutes.length == 1) {
                 minutes = '0' + minutes;
               }
-              info_datetime.textContent  = datetimeObject.getHours() + ":" + minutes + " · " + datetimeObject.getFullYear() + "年" + datetimeObject.getMonth() + "月" + datetimeObject.getDate() + "日";
+              info_datetime.textContent  = datetimeObject.getHours() + ":" + minutes + " · " + datetimeObject.getFullYear() + "年" + (datetimeObject.getMonth() + 1) + "月" + datetimeObject.getDate() + "日";
               info_full_text.textContent = "";
               var tweet_text_ary = status.text.split("\n");
               for (var i = 0; i < tweet_text_ary.length - 1; i++){
@@ -181,6 +230,27 @@
               videoplayer.play();
 
             }
+
+            function jsonDownload(){
+              //jsonが空だったらDLしない
+              if (json){
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json));
+                let downloadLink = document.createElement('a');
+                downloadLink.setAttribute("href",dataStr);
+                downloadLink.setAttribute("download", "twideo-playlist.json");
+                downloadLink.click();
+              } else {
+                alert("プレイリストが空です");
+              }
+            }
+
+            function jsonUpload(){
+              //upload
+              //jsonの不整合で再生時にエラー起きたら強制try catchでどうにかなる説
+              
+            }
+
+            
             </script>
       <style>
         .search_container {
@@ -277,6 +347,21 @@
         .twitter__container .twitter__block-text .text {
           margin: 5px 0;
         }
+
+        .down-up-load_wrapper {
+          text-align: center;
+        }
+        label { /*https://qiita.com/d0ne1s/items/dd0ffa707ffe051969d7*/
+          background: #39f;
+          color: white;
+          font-size: 0.8rem;
+          padding: 8px 10px;
+          border-radius: 4px;
+          display: inline-block;
+          position: relative;
+          cursor: pointer;
+          margin-right: 8px;
+        }
       </style>
 
     </head>
@@ -291,7 +376,7 @@
       <div class="wrapper">
         <div class="search_container">
           <input type="text" id="post_param" size=20 placeholder="検索ワード" onkeypress="detect_enter(event.keyCode);">
-          <input type="submit" id="submit" value="検索" onClick="post_func('http://localhost:5000/post')">  <!-- 送信先のurl -->
+          <input type="submit" id="submit" value="検索" onClick="post_func(serverURL + '/post')">  <!-- 送信先のurl https://twideo-loop.herokuapp.com/post -->
           <div id="search_status">検索ワードを指定してください</div>
         </div>
         
@@ -307,17 +392,26 @@
 
             
           </div>
+
+          <!--ここ実装中-->
+          <div class="down-up-load_wrapper">
+            <button id="jsonDownload" onclick="jsonDownload();" style="display:none;"></button>
+            <label for="jsonDownload">プレイリストをJSONでダウンロード</label>
+            <input id="jsonUpload" type="file" accept=".json" text="Upload" style="display: none;">
+            <label for="jsonUpload">JSONのプレイリストを読み込み…</label>
+          </div>
           <div class="twitter__container">
             <div class="twitter__block">
               <figure>
                 <img id="twitter_icon" width="64" src="/favicon.ico">
               </figure>
               <div class="twitter__block-text">
-                <div><span class="name" id="user_name">このアプリについて</span><span class="name_reply" id="user_id">@about_me</span></div>
-                <div class="date" id="datetime">午後11:46 · 2020年12月14日</div>
+                <div><span class="name" id="user_name">このアプリについて</span><span class="name_reply" id="user_id">@about_this_website</span></div>
+                <div class="date" id="datetime">午前01:04 · 2021年2月25日</div>
                 <div class="text" id="full_text">
                   検索ワードを含むツイートに添付された動画を連続で再生するWebアプリです。<br>
-                  直近1週間のツイートから検索できます(Twitter APIの仕様で、1週間しか遡れません)。
+                  直近1週間のツイートから検索できます(Twitter APIの仕様で、1週間しか遡れません)。<br>
+                  30秒ほど待っても「検索中」のままのときは、ページをリロードするか、(読み込みに失敗した可能性があります)15分ほど時間を空けて再度お試しください(Twitter APIの一定時間内の検索数上限に引っかかった可能性があります)。
                 </div>
                 <a id="tweet_url" target="_blank" rel="noopener noreferrer"></a>
               </div>
