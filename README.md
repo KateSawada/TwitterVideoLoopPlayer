@@ -15,6 +15,11 @@
 4. 表示されたアドレス・ポートにブラウザでアクセスする
 5. 検索したい言葉を入力して検索ボタンを押す(デフォルトで「#深夜の2時間DTM」になっています)
 
+## URL
+
+https://twideo-loop.herokuapp.com
+こちらで公開しています
+
 ## 参考
 - Twitter API(tweepy)
     - https://qiita.com/KEI_y/items/2d4d32c78f88fdb16eee
